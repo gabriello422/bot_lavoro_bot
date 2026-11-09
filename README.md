@@ -1,18 +1,25 @@
 # Bot Lavoro — @bot_lavoro_bot
 
-Copia del bot originale con le stesse funzioni e senza ID Telegram fisso.
+Copia del bot originale, con attivazione tramite codice e senza ID Telegram fisso.
 
 ## Railway
-1. Carica questi file in un nuovo repository GitHub (oppure usa Railway con questo progetto).
-2. Imposta la variabile `BOT_TOKEN` con il token del nuovo bot (non pubblicarlo su GitHub).
-3. Imposta Start Command: `python main.py`.
-4. Se disponibile, imposta `MINI_APP_URL` con l’URL pubblico HTTPS del servizio; in alternativa il bot usa `RAILWAY_PUBLIC_DOMAIN`.
-5. Avvia il servizio, apri @bot_lavoro_bot su Telegram e invia **/start** prima di chiunque altro.
+1. Carica la cartella del progetto in un repository GitHub.
+2. Configura le variabili Railway `BOT_TOKEN` (token Telegram) e `ACTIVATION_CODE` (scegli una password lunga e casuale, privata; non inserirla nel codice o su GitHub).
+3. Imposta Start Command `python main.py`.
+4. Per la mini app puoi configurare `MINI_APP_URL` con l'URL HTTPS pubblico; altrimenti viene usato `RAILWAY_PUBLIC_DOMAIN`.
+5. Su Telegram, invia `/start`, poi `/attiva TUO_CODICE`. Solo il primo utente con codice corretto diventa proprietario.
 
-Il primo account che invia /start diventa proprietario. Gli altri account non possono usare il bot. L’ID viene memorizzato automaticamente in `owner.json` e non va inserito nel codice.
+## Prova e passaggio al nuovo proprietario
+- Puoi attivare e provare il bot dal tuo Telegram.
+- Per liberare il bot, invia `/trasferisci TUO_CODICE` dal tuo account proprietario.
+- Il nuovo utilizzatore invia `/attiva TUO_CODICE` dal suo Telegram.
+- **Attenzione:** `/trasferisci` non cancella timbrature o lavori; prima di consegnarlo, esporta i dati e usa `Reset mese` se vuoi svuotare le registrazioni. Il reset elimina i dati registrati, quindi esportali prima.
+- Il codice di attivazione è una password: non condividerlo con estranei. Dopo il passaggio, cambialo nelle variabili Railway se vuoi invalidare il precedente.
+- Telegram potrebbe conservare il messaggio con il codice se non è possibile eliminarlo automaticamente: puoi cancellarlo manualmente.
 
-**Importante:** `owner.json` e `dati.json` devono essere conservati su un volume persistente Railway, altrimenti si possono perdere proprietario e timbrature ai riavvii/redeploy. Per esempio, monta un volume su `/data` e configura `OWNER_FILE=/data/owner.json` e `DATA_FILE=/data/dati.json`.
+## Persistenza
+Configura un volume Railway montato su `/data` e le variabili `OWNER_FILE=/data/owner.json` e `DATA_FILE=/data/dati.json` per conservare proprietario e timbrature tra i deploy. Un semplice riavvio NON è un modo affidabile per cambiare proprietario.
 
-Non avviare contemporaneamente due istanze in polling con lo stesso token.
+Non avviare due istanze polling con lo stesso token.
 
-Il link Ore Live è pubblico, come nel progetto originale: chi conosce l’URL può vedere i dati mostrati nella mini app. Non usarlo per informazioni riservate senza aggiungere autenticazione.
+**Privacy:** la mini app Ore Live conserva l'accesso pubblico dell'originale: chi conosce il link può visualizzarne i dati. Per dati riservati serve autenticazione separata.

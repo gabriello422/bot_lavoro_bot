@@ -4,8 +4,7 @@ from datetime import datetime
 import pytz
 
 DATA_FILE = os.getenv("DATA_FILE", "dati.json")
-# Il primo utente che esegue /start diventa proprietario del bot.
-# Nessun ID Telegram deve essere configurato nel codice.
+# Il proprietario viene assegnato solo tramite codice di attivazione.
 OWNER_FILE = os.getenv("OWNER_FILE", "owner.json")
 
 
@@ -18,6 +17,7 @@ def get_owner_id():
 
 
 def claim_owner(user_id):
+    """Assegna il proprietario solo se non esiste già; scrittura esclusiva."""
     owner = get_owner_id()
     if owner is not None:
         return owner == user_id
@@ -27,6 +27,17 @@ def claim_owner(user_id):
         return True
     except FileExistsError:
         return get_owner_id() == user_id
+
+
+def release_owner(user_id):
+    """Libera il bot solo per il proprietario attuale; non tocca le timbrature."""
+    if not is_owner(user_id):
+        return False
+    try:
+        os.remove(OWNER_FILE)
+        return True
+    except OSError:
+        return False
 
 
 def is_owner(user_id):

@@ -1,4 +1,5 @@
 from datetime import datetime, time as dtime
+import hmac
 
 from telegram import Update, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
@@ -7,7 +8,7 @@ from telegram.ext import (
 )
 
 from database import (
-    get_owner_id, claim_owner, is_owner, TZ, now_it,
+    get_owner_id, claim_owner, release_owner, is_owner, TZ, now_it,
     get_user_data, add_record, set_work_start,
     get_work_start, reset_month
 )
@@ -56,11 +57,55 @@ def menu_lavori():
 # START
 # --------------------------------------
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if not claim_owner(update.effective_user.id):
-        return await update.message.reply_text("Accesso non autorizzato: il bot ha già un proprietario.")
+def valid_activation_code(candidate):
+    configured = os.getenv("ACTIVATION_CODE", "")
+    return bool(configured) and hmac.compare_digest(candidate, configured)
 
-    await update.message.reply_text("Bot attivo 💼", reply_markup=menu_principale())
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if is_owner(update.effective_user.id):
+        return await update.message.reply_text("Bot attivo 💼", reply_markup=menu_principale())
+    if get_owner_id() is not None:
+        return await update.message.reply_text("Bot già assegnato a un altro proprietario.")
+    await update.message.reply_text("Per attivare Bot Lavoro invia /attiva seguito dal codice di attivazione.")
+
+
+async def attiva(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if is_owner(update.effective_user.id):
+        return await update.message.reply_text("Sei già il proprietario.", reply_markup=menu_principale())
+    if get_owner_id() is not None:
+        return await update.message.reply_text("Bot già assegnato a un altro proprietario.")
+    if not context.args or not valid_activation_code(" ".join(context.args)):
+        return await update.message.reply_text("Codice non valido. Usa /attiva CODICE.")
+    if claim_owner(update.effective_user.id):
+        await update.message.reply_text("Attivazione completata! 💼", reply_markup=menu_principale())
+    else:
+        await update.message.reply_text("Il bot è già stato attivato da un altro utente.")
+    # Elimina il messaggio con il codice quando Telegram lo consente.
+    try:
+        await update.message.delete()
+    except Exception:
+        pass
+
+
+async def trasferisci(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_owner(update.effective_user.id):
+        return await update.message.reply_text("Comando riservato al proprietario.")
+    if not context.args or not valid_activation_code(" ".join(context.args)):
+        return await update.message.reply_text("Per liberare il bot usa /trasferisci CODICE.")
+    if release_owner(update.effective_user.id):
+        context.user_data.clear()
+        await update.message.reply_text(
+            "Proprietario scollegato. Il nuovo utilizzatore può inviare /attiva CODICE. "
+            "Le timbrature esistenti non sono state cancellate.",
+            reply_markup=ReplyKeyboardMarkup([["/start"]], resize_keyboard=True)
+        )
+    else:
+        await update.message.reply_text("Impossibile scollegare il proprietario: controlla il volume dati.")
+    try:
+        await update.message.delete()
+    except Exception:
+        pass
 
 
 # --------------------------------------
@@ -316,11 +361,15 @@ def run_bot():
 
     if not token:
         raise RuntimeError("Configura BOT_TOKEN nelle variabili del server.")
+    if not os.getenv("ACTIVATION_CODE"):
+        raise RuntimeError("Configura ACTIVATION_CODE nelle variabili Railway.")
     app = ApplicationBuilder().token(token).build()
 
     app.add_handler(CommandHandler("entrata_auto", entrata_auto))
     app.add_handler(CommandHandler("uscita_auto", uscita_auto))
     app.add_handler(CommandHandler("start", start))
+    app.add_handler(CommandHandler("attiva", attiva))
+    app.add_handler(CommandHandler("trasferisci", trasferisci))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     jq = app.job_queue
