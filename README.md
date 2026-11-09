@@ -23,3 +23,7 @@ Configura un volume Railway montato su `/data` e le variabili `OWNER_FILE=/data/
 Non avviare due istanze polling con lo stesso token.
 
 **Privacy:** la mini app Ore Live conserva l'accesso pubblico dell'originale: chi conosce il link può visualizzarne i dati. Per dati riservati serve autenticazione separata.
+
+## Nome automatico Ore Live
+Il nome mostrato proviene dal nome completo Telegram salvato durante `/attiva`. Se il proprietario era già attivo prima di questo aggiornamento, inviare `/start` per aggiornare il nome. La pagina va ricaricata. Il trasferimento cancella anche il nome precedente.
+I file statici si trovano in `static/css/style.css` e `static/js/app.js`.

@@ -8,7 +8,7 @@ from telegram.ext import (
 )
 
 from database import (
-    get_owner_id, claim_owner, release_owner, is_owner, TZ, now_it,
+    get_owner_id, claim_owner, release_owner, is_owner, set_owner_name, TZ, now_it,
     get_user_data, add_record, set_work_start,
     get_work_start, reset_month
 )
@@ -64,6 +64,7 @@ def valid_activation_code(candidate):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_owner(update.effective_user.id):
+        set_owner_name(update.effective_user.id, update.effective_user.full_name)
         return await update.message.reply_text("Bot attivo 💼", reply_markup=menu_principale())
     if get_owner_id() is not None:
         return await update.message.reply_text("Bot già assegnato a un altro proprietario.")
@@ -72,12 +73,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def attiva(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_owner(update.effective_user.id):
+        set_owner_name(update.effective_user.id, update.effective_user.full_name)
         return await update.message.reply_text("Sei già il proprietario.", reply_markup=menu_principale())
     if get_owner_id() is not None:
         return await update.message.reply_text("Bot già assegnato a un altro proprietario.")
     if not context.args or not valid_activation_code(" ".join(context.args)):
         return await update.message.reply_text("Codice non valido. Usa /attiva CODICE.")
     if claim_owner(update.effective_user.id):
+        set_owner_name(update.effective_user.id, update.effective_user.full_name)
         await update.message.reply_text("Attivazione completata! 💼", reply_markup=menu_principale())
     else:
         await update.message.reply_text("Il bot è già stato attivato da un altro utente.")

@@ -16,6 +16,35 @@ def get_owner_id():
         return None
 
 
+def get_owner_name():
+    """Nome Telegram associato all’attuale proprietario."""
+    try:
+        with open(OWNER_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if int(data["owner_id"]) != get_owner_id():
+            return ""
+        return str(data.get("owner_name") or "")
+    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
+        return ""
+
+
+def set_owner_name(user_id, name):
+    """Aggiorna il nome soltanto se l'utente è il proprietario."""
+    if not is_owner(user_id):
+        return False
+    try:
+        with open(OWNER_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+        if int(data.get("owner_id", 0)) != user_id:
+            return False
+        data["owner_name"] = str(name or "").strip()[:100]
+        with open(OWNER_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+        return True
+    except (OSError, ValueError, TypeError, json.JSONDecodeError):
+        return False
+
+
 def claim_owner(user_id):
     """Assegna il proprietario solo se non esiste già; scrittura esclusiva."""
     owner = get_owner_id()
