@@ -27,3 +27,10 @@ Non avviare due istanze polling con lo stesso token.
 ## Nome automatico Ore Live
 Il nome mostrato proviene dal nome completo Telegram salvato durante `/attiva`. Se il proprietario era già attivo prima di questo aggiornamento, inviare `/start` per aggiornare il nome. La pagina va ricaricata. Il trasferimento cancella anche il nome precedente.
 I file statici si trovano in `static/css/style.css` e `static/js/app.js`.
+
+
+## Nome proprietario su Ore Live
+Dopo `/attiva CODICE`, rispondi alla domanda con il nome desiderato.
+Per cambiarlo in seguito usa `/cambia_nome Nuovo Nome` oppure `/cambia_nome` e rispondi al messaggio.
+La pagina `/ore-live` mostra il nome salvato; in assenza di un nome mostra `Bot Lavoro`.
+Il comando `/trasferisci CODICE` elimina anche il nome del precedente proprietario.

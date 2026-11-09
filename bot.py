@@ -64,8 +64,7 @@ def valid_activation_code(candidate):
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_owner(update.effective_user.id):
-        set_owner_name(update.effective_user.id, update.effective_user.full_name)
-        return await update.message.reply_text("Bot attivo 💼", reply_markup=menu_principale())
+        return await update.message.reply_text("Bot attivo 💼. Per modificare il nome usa /cambia_nome NOME", reply_markup=menu_principale())
     if get_owner_id() is not None:
         return await update.message.reply_text("Bot già assegnato a un altro proprietario.")
     await update.message.reply_text("Per attivare Bot Lavoro invia /attiva seguito dal codice di attivazione.")
@@ -73,15 +72,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def attiva(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if is_owner(update.effective_user.id):
-        set_owner_name(update.effective_user.id, update.effective_user.full_name)
-        return await update.message.reply_text("Sei già il proprietario.", reply_markup=menu_principale())
+        return await update.message.reply_text("Sei già il proprietario. Per modificare il nome usa /cambia_nome NOME", reply_markup=menu_principale())
     if get_owner_id() is not None:
         return await update.message.reply_text("Bot già assegnato a un altro proprietario.")
     if not context.args or not valid_activation_code(" ".join(context.args)):
         return await update.message.reply_text("Codice non valido. Usa /attiva CODICE.")
     if claim_owner(update.effective_user.id):
-        set_owner_name(update.effective_user.id, update.effective_user.full_name)
-        await update.message.reply_text("Attivazione completata! 💼", reply_markup=menu_principale())
+        context.user_data["awaiting_owner_name"] = True
+        await update.message.reply_text("Attivazione completata! 💼\nCome ti chiami? Scrivi il nome che vuoi mostrare su Ore Live.", reply_markup=menu_principale())
     else:
         await update.message.reply_text("Il bot è già stato attivato da un altro utente.")
     # Elimina il messaggio con il codice quando Telegram lo consente.
@@ -109,6 +107,22 @@ async def trasferisci(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.delete()
     except Exception:
         pass
+
+
+async def cambia_nome(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not is_owner(update.effective_user.id):
+        return await update.message.reply_text("Comando riservato al proprietario.")
+    name = " ".join(context.args).strip()
+    if not name:
+        context.user_data["awaiting_owner_name"] = True
+        return await update.message.reply_text("Come vuoi chiamarti su Ore Live? Scrivi il tuo nome.")
+    if len(name) > 60:
+        return await update.message.reply_text("Il nome deve contenere al massimo 60 caratteri.")
+    if set_owner_name(update.effective_user.id, name):
+        context.user_data.pop("awaiting_owner_name", None)
+        await update.message.reply_text(f"Nome aggiornato: {name} ✅\nRicarica Ore Live.")
+    else:
+        await update.message.reply_text("Impossibile salvare il nome. Controlla i permessi di scrittura del server.")
 
 
 # --------------------------------------
@@ -188,6 +202,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     text = update.message.text
+    if context.user_data.get("awaiting_owner_name"):
+        name = text.strip()
+        if not name or len(name) > 60:
+            return await update.message.reply_text("Inserisci un nome da 1 a 60 caratteri.")
+        if set_owner_name(update.effective_user.id, name):
+            context.user_data.pop("awaiting_owner_name", None)
+            return await update.message.reply_text(f"Piacere, {name}! ✅ Il nome ora compare su Ore Live.", reply_markup=menu_principale())
+        return await update.message.reply_text("Non riesco a salvare il nome sul server. Riprova.")
     data, user = get_user_data()
 
     now = now_it()
@@ -373,6 +395,7 @@ def run_bot():
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("attiva", attiva))
     app.add_handler(CommandHandler("trasferisci", trasferisci))
+    app.add_handler(CommandHandler("cambia_nome", cambia_nome))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
 
     jq = app.job_queue
