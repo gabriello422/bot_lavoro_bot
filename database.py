@@ -4,7 +4,7 @@ from datetime import datetime
 import pytz
 
 DATA_FILE = os.getenv("DATA_FILE", "dati.json")
-AUTHORIZED_USER_ID = 361555418
+AUTHORIZED_USER_ID = 5806413023
 TZ = pytz.timezone("Europe/Rome")
 
 
