@@ -4,74 +4,7 @@ from datetime import datetime
 import pytz
 
 DATA_FILE = os.getenv("DATA_FILE", "dati.json")
-# Il proprietario viene assegnato solo tramite codice di attivazione.
-OWNER_FILE = os.getenv("OWNER_FILE", "owner.json")
-
-
-def get_owner_id():
-    try:
-        with open(OWNER_FILE, "r", encoding="utf-8") as f:
-            return int(json.load(f)["owner_id"])
-    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
-        return None
-
-
-def get_owner_name():
-    """Nome Telegram associato all’attuale proprietario."""
-    try:
-        with open(OWNER_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if int(data["owner_id"]) != get_owner_id():
-            return ""
-        return str(data.get("owner_name") or "")
-    except (OSError, ValueError, KeyError, TypeError, json.JSONDecodeError):
-        return ""
-
-
-def set_owner_name(user_id, name):
-    """Aggiorna il nome soltanto se l'utente è il proprietario."""
-    if not is_owner(user_id):
-        return False
-    try:
-        with open(OWNER_FILE, "r", encoding="utf-8") as f:
-            data = json.load(f)
-        if int(data.get("owner_id", 0)) != user_id:
-            return False
-        data["owner_name"] = str(name or "").strip()[:100]
-        with open(OWNER_FILE, "w", encoding="utf-8") as f:
-            json.dump(data, f, ensure_ascii=False)
-        return True
-    except (OSError, ValueError, TypeError, json.JSONDecodeError):
-        return False
-
-
-def claim_owner(user_id):
-    """Assegna il proprietario solo se non esiste già; scrittura esclusiva."""
-    owner = get_owner_id()
-    if owner is not None:
-        return owner == user_id
-    try:
-        with open(OWNER_FILE, "x", encoding="utf-8") as f:
-            json.dump({"owner_id": user_id}, f)
-        return True
-    except FileExistsError:
-        return get_owner_id() == user_id
-
-
-def release_owner(user_id):
-    """Libera il bot solo per il proprietario attuale; non tocca le timbrature."""
-    if not is_owner(user_id):
-        return False
-    try:
-        os.remove(OWNER_FILE)
-        return True
-    except OSError:
-        return False
-
-
-def is_owner(user_id):
-    return get_owner_id() == user_id
-
+AUTHORIZED_USER_ID = 361555418
 TZ = pytz.timezone("Europe/Rome")
 
 
@@ -96,7 +29,7 @@ def save_data(data):
 
 
 def get_user_key():
-    return "owner"
+    return str(AUTHORIZED_USER_ID)
 
 
 def ensure_user(data):

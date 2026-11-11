@@ -4,7 +4,7 @@ from flask import Flask, jsonify, render_template
 
 from database import (
     TZ, now_it, get_work_start,
-    get_records, current_session_seconds, get_owner_name
+    get_records, current_session_seconds
 )
 
 app = Flask(__name__)
@@ -28,12 +28,12 @@ def parse_record_datetime(data_str, ora_str):
 
 @app.route("/")
 def home():
-    return render_template("ore_live.html", owner_name=get_owner_name() or "Bot Lavoro")
+    return render_template("ore_live.html")
 
 
 @app.route("/ore-live")
 def ore_live():
-    return render_template("ore_live.html", owner_name=get_owner_name() or "Bot Lavoro")
+    return render_template("ore_live.html")
 
 
 @app.route("/api/status")
